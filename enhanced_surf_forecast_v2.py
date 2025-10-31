@@ -1,11 +1,20 @@
 """
-ULTIMATE SURF FORECAST V3.1 - PROFESSIONAL ENHANCED VERSION
+ULTIMATE SURF FORECAST V3.0 - ENHANCED SURFER-FOCUSED VERSION
 =======================================================
-Improved UI/UX to resemble Surfline with better features.
-Direct live cam embeds (YouTube streams or images).
-Satellite maps with wind overlays.
-Smoother tide charts with spline interpolation.
-Enhanced styling and layouts.
+Focused on core surfing info: conditions, forecasts, tides, cams, maps, analysis.
+Removed user accounts, eco, community features.
+Added more spots, metrics, scores, cams, enhanced charts/analysis.
+
+Features:
+- Expanded beach database (NY/NJ spots)
+- Detailed current conditions (wind dir, swell dir, energy)
+- Surf quality scoring system
+- Multi-day forecasts (waves, wind, weather)
+- Tide predictions and charts
+- Live surf cams
+- Interactive map with condition overlays
+- Advanced charts and textual analysis
+- Mobile-first design
 """
 
 import streamlit as st
@@ -19,83 +28,17 @@ import json
 import numpy as np
 from dataclasses import dataclass, asdict
 
-# ==================== CUSTOM CSS ====================
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f0f4f8;
-    color: #333;
-}
-
-.main-header {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #1e40af;
-    text-align: center;
-    margin-bottom: 0.5rem;
-}
-
-.subtitle {
-    text-align: center;
-    color: #64748b;
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
-}
-
-.stMetric {
-    background-color: white;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
-}
-
-.stMetric label {
-    font-weight: 700;
-    color: #1e40af;
-}
-
-.stMetric value {
-    font-size: 1.5rem;
-}
-
-.stTabs > div > button {
-    background-color: #dbeafe;
-    color: #1e40af;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px 4px 0 0;
-}
-
-.stTabs > div > button:hover {
-    background-color: #bfdbfe;
-}
-
-.sidebar .stSelectbox, .sidebar .stSlider, .sidebar .stCheckbox {
-    background-color: white;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
 # ==================== CONFIGURATION ====================
 
 st.set_page_config(
-    page_title="🌊 Ultimate Surf Forecast",
+    page_title="🌊 Ultimate Surf Forecast V3",
     page_icon="🏄",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://github.com/your-repo',
         'Report a bug': "https://github.com/your-repo/issues",
-        'About': "Ultimate Surf Forecast - Professional Surf Forecasting Platform"
+        'About': "Ultimate Surf Forecast V3 - Open Source Surf Forecasting Platform"
     }
 )
 
@@ -140,7 +83,7 @@ class Beach:
     parking: str
     facilities: List[str]
     notes: str
-    cam_urls: List[str] = None  # Surf cam URLs (YouTube embed or image)
+    cam_urls: List[str] = None  # New: Surf cam URLs
     
     def __post_init__(self):
         if self.cam_urls is None:
@@ -170,7 +113,10 @@ BEACHES = {
         parking="Street parking, paid lots",
         facilities=["Bathrooms", "Showers", "Food"],
         notes="NYC's premier surf spot. Can get crowded. Best on NW winds.",
-        cam_urls=["https://www.youtube.com/embed/ge2TsXglKgQ"]
+        cam_urls=[
+            "https://thesurfersview.com/live-cams/new-york/rockaway-beach-cam-and-surf-report/",
+            "https://nysea.com/live-cam/rockaway-ny/"
+        ]
     ),
     "Long Beach, NY": Beach(
         name="Long Beach, NY",
@@ -193,7 +139,10 @@ BEACHES = {
         parking="Paid parking lots",
         facilities=["Bathrooms", "Boardwalk", "Food"],
         notes="Consistent surf with multiple peaks. Watch the jetties.",
-        cam_urls=["https://www.youtube.com/embed/GTMX34w5Gxc"]
+        cam_urls=[
+            "https://thesurfersview.com/live-cams/new-york/long-beach-cam-and-surf-report/",
+            "https://skudinsurf.com/surf-cam/"
+        ]
     ),
     "Montauk Point, NY": Beach(
         name="Montauk Point, NY",
@@ -216,7 +165,10 @@ BEACHES = {
         parking="Free parking",
         facilities=["Bathrooms", "Lighthouse"],
         notes="World-class waves when it's on. Not for beginners.",
-        cam_urls=["https://www.youtube.com/embed/Oru2l3Hzh2A"]
+        cam_urls=[
+            "https://nybeachcams.com/long-island/montauk-surf-cam/",
+            "https://cameras.montauklighthouse.com/"
+        ]
     ),
     "Jones Beach, NY": Beach(
         name="Jones Beach, NY",
@@ -239,7 +191,7 @@ BEACHES = {
         parking="Paid lots",
         facilities=["Bathrooms", "Food"],
         notes="Popular spot with consistent waves.",
-        cam_urls=["https://www.youtube.com/embed/7shCjhL0kcA"]
+        cam_urls=["https://thesurfersview.com/live-cams/new-york/long-beach-cam-and-surf-report/"]  # Proxied
     ),
     "Gilgo Beach, NY": Beach(
         name="Gilgo Beach, NY",
@@ -262,7 +214,7 @@ BEACHES = {
         parking="Permit required",
         facilities=["Limited"],
         notes="Less crowded alternative to Jones.",
-        cam_urls=["https://gilgo.com/cam/surfcam.jpg"]
+        cam_urls=[]
     ),
     "Manasquan Inlet, NJ": Beach(
         name="Manasquan Inlet, NJ",
@@ -285,7 +237,7 @@ BEACHES = {
         parking="Street parking",
         facilities=["Bathrooms"],
         notes="Classic NJ spot with powerful waves.",
-        cam_urls=["https://www.youtube.com/embed/71unjYWqD7A"]
+        cam_urls=["https://thesurfersview.com/live-cams/new-jersey/manasquan-cam-and-surf-report/"]  # Assuming available
     ),
 }
 
@@ -463,27 +415,21 @@ def create_forecast_charts(marine_data: Dict, weather_data: Dict):
                         subplot_titles=('Wave Height & Period', 'Wind Speed & Direction', 'Air Temperature', 'Precipitation'))
     
     # Wave
-    fig.add_trace(go.Scatter(x=times, y=wave_height, name='Wave Height (m)', line=dict(color='#3b82f6', width=2, shape='spline')), row=1, col=1)
-    fig.add_trace(go.Scatter(x=times, y=wave_period, name='Period (s)', line=dict(color='#22c55e', width=2, shape='spline'), yaxis='y2'), row=1, col=1)
+    fig.add_trace(go.Scatter(x=times, y=wave_height, name='Wave Height (m)', line=dict(color='blue')), row=1, col=1)
+    fig.add_trace(go.Scatter(x=times, y=wave_period, name='Period (s)', line=dict(color='green'), yaxis='y2'), row=1, col=1)
     
     # Wind
-    fig.add_trace(go.Scatter(x=times, y=wind_speed, name='Wind Speed (km/h)', line=dict(color='#a855f7', width=2, shape='spline')), row=2, col=1)
-    fig.add_trace(go.Scatter(x=times, y=wind_dir, name='Wind Dir (°)', mode='markers', marker=dict(color='#f59e0b', size=6)), row=2, col=1)
+    fig.add_trace(go.Scatter(x=times, y=wind_speed, name='Wind Speed (km/h)', line=dict(color='purple')), row=2, col=1)
+    fig.add_trace(go.Scatter(x=times, y=wind_dir, name='Wind Dir (°)', mode='markers', marker=dict(color='orange')), row=2, col=1)
     
     # Temp
-    fig.add_trace(go.Scatter(x=times, y=temp, name='Temp (°C)', line=dict(color='#ef4444', width=2, shape='spline')), row=3, col=1)
+    fig.add_trace(go.Scatter(x=times, y=temp, name='Temp (°C)', line=dict(color='red')), row=3, col=1)
     
     # Precip
     precip = weather_data['hourly']['precipitation']
-    fig.add_trace(go.Bar(x=times, y=precip, name='Precip (mm)', marker_color='#93c5fd'), row=4, col=1)
+    fig.add_trace(go.Bar(x=times, y=precip, name='Precip (mm)', marker_color='lightblue'), row=4, col=1)
     
-    fig.update_layout(
-        height=800, 
-        showlegend=True, 
-        hovermode='x unified',
-        template='plotly_white',
-        font=dict(family='Roboto', color='#333')
-    )
+    fig.update_layout(height=800, showlegend=True, hovermode='x unified')
     return fig
 
 def create_tide_chart(tides: List[Dict]):
@@ -495,35 +441,23 @@ def create_tide_chart(tides: List[Dict]):
     df['v'] = df['v'].astype(float)
     
     fig = go.Figure()
-    colors = ['#ef4444' if h == 'H' else '#3b82f6' for h in df['type']]
-    fig.add_trace(go.Scatter(
-        x=df['t'], 
-        y=df['v'], 
-        mode='lines+markers',
-        line=dict(shape='spline', width=3, color='#1d4ed8'),
-        marker=dict(color=colors, size=8)
-    ))
+    fig.add_trace(go.Scatter(x=df['t'], y=df['v'], mode='lines+markers',
+                             marker=dict(color=['red' if h == 'H' else 'blue' for h in df['type']])))
     
-    fig.update_layout(
-        title='Tide Predictions (Smooth Curve)',
-        xaxis_title='Time',
-        yaxis_title='Height (ft)',
-        hovermode='x unified',
-        template='plotly_white',
-        font=dict(family='Roboto', color='#333')
-    )
+    fig.update_layout(title='Tide Predictions', xaxis_title='Time', yaxis_title='Height (ft)',
+                      hovermode='x unified')
     return fig
 
 def create_interactive_map(beaches_dict: Dict[str, Dict], current_conditions: Dict[str, Dict]):
-    """Enhanced satellite map with color-coded markers and wind arrows"""
+    """Enhanced map with color-coded markers based on surf score"""
     map_html = """
     <div id="map" style="width: 100%; height: 600px;"></div>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([40.5, -73.5], 9);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri'
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
         
         var beaches = """ + json.dumps(list(beaches_dict.values())) + """;
@@ -534,49 +468,19 @@ def create_interactive_map(beaches_dict: Dict[str, Dict], current_conditions: Di
             var score = cond.score || 0;
             var color = score >= 4 ? 'green' : score >= 3 ? 'orange' : 'red';
             
-            L.circleMarker([beach.lat, beach.lon], {
+            var marker = L.circleMarker([beach.lat, beach.lon], {
                 color: color,
-                radius: 10,
+                radius: 8,
                 fillOpacity: 0.8
             }).addTo(map);
-            
-            if (cond.wind_dir) {
-                var arrowIcon = L.divIcon({
-                    className: 'wind-arrow',
-                    html: '<div style="font-size: 24px; color: white; text-shadow: 0 0 3px black; transform: rotate(' + cond.wind_dir + 'deg);">➤</div>'
-                });
-                L.marker([beach.lat + 0.01, beach.lon + 0.01], {icon: arrowIcon}).addTo(map);
-            }
             
             var popup = "<b>" + beach.name + "</b><br>" +
                         "Score: " + score.toFixed(1) + " ⭐<br>" +
                         "Waves: " + (cond.height || 'N/A') + " ft<br>" +
                         "Wind: " + (cond.wind_speed || 'N/A') + " mph " + (cond.wind_dir || '') + "°<br>" +
                         "Swell: " + (cond.swell_dir || '') + "°";
-            L.marker([beach.lat, beach.lon]).bindPopup(popup).addTo(map);
+            marker.bindPopup(popup);
         });
-    </script>
-    """
-    return map_html
-
-def create_beach_satellite_map(lat: float, lon: float, wind_dir: float = None, wind_speed: float = None):
-    """Small satellite map for individual beach with wind overlay"""
-    map_html = """
-    <div id="beach_map" style="width: 100%; height: 300px;"></div>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        var map = L.map('beach_map').setView([""" + str(lat) + """, """ + str(lon) + """], 14);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri'
-        }).addTo(map);
-        
-        """ + (f"""
-        var arrowIcon = L.divIcon({{
-            html: '<div style="font-size: 30px; color: #ef4444; transform: rotate({wind_dir}deg);">➤</div><div style="text-align: center; color: white; font-weight: bold;">{wind_speed:.0f} mph</div>'
-        }});
-        L.marker([{lat}, {lon}], {{icon: arrowIcon}}).addTo(map);
-        """ if wind_dir is not None and wind_speed is not None else "") + """
     </script>
     """
     return map_html
@@ -586,7 +490,7 @@ def create_beach_satellite_map(lat: float, lon: float, wind_dir: float = None, w
 TRANSLATIONS = {
     'en': {
         'title': 'ULTIMATE SURF FORECAST',
-        'subtitle': 'Professional Surf Intel for NY/NJ Spots',
+        'subtitle': 'Advanced Surf Intel for NY/NJ Spots',
         'beach_selection': 'Spot Selection',
         'current_conditions': 'Current Conditions',
         'wave_height': 'Wave Height',
@@ -632,17 +536,20 @@ def t(key: str) -> str:
 
 def main():
     # Header
-    st.markdown('<div class="main-header">🌊 ' + t('title') + '</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">' + t('subtitle') + '</div>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1:
+        st.markdown('<div class="main-header">🌊 ' + t('title') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtitle">' + t('subtitle') + '</div>', unsafe_allow_html=True)
     
-    col_lang, col_theme = st.columns([1,1])
-    with col_lang:
-        lang = st.selectbox("🌐 Language", ["en", "es"], index=0 if st.session_state.language == 'en' else 1)
+    with col3:
+        # Language selector
+        lang = st.selectbox("🌐", ["en", "es"], index=0 if st.session_state.language == 'en' else 1, label_visibility="collapsed")
         if lang != st.session_state.language:
             st.session_state.language = lang
             st.rerun()
-    with col_theme:
-        if st.button("🌓 Theme"):
+        
+        # Theme toggle
+        if st.button("🌓"):
             st.session_state.theme = 'dark' if st.session_state.theme == 'light' else 'light'
             st.rerun()
     
@@ -698,13 +605,6 @@ def main():
             st.error("Unable to fetch buoy data. Try later.")
             return
         
-        # Satellite map with wind
-        st.markdown("## 🛰️ Beach Overview")
-        wind_dir = safe_extract_float(buoy_data.get('WDIR'))
-        wind_speed = safe_extract_float(buoy_data.get('WSPD'), 2.23694)
-        map_html_beach = create_beach_satellite_map(beach.lat, beach.lon, wind_dir, wind_speed)
-        st.components.v1.html(map_html_beach, height=300)
-        
         # Current conditions
         st.markdown("## 🎯 " + t('current_conditions'))
         
@@ -717,15 +617,17 @@ def main():
         wave_energy = (wave_height_ft ** 2 * wave_period) if wave_height_ft and wave_period else None
         surf_score = compute_surf_score(beach_info, buoy_data)
         
-        cols = st.columns(8)
-        cols[0].metric(t('wave_height'), f"{wave_height_ft:.1f} ft" if wave_height_ft else "N/A")
-        cols[1].metric(t('wave_period'), f"{wave_period:.0f} sec" if wave_period else "N/A")
-        cols[2].metric(t('wind_speed'), f"{wind_speed_mph:.0f} mph" if wind_speed_mph else "N/A")
-        cols[3].metric(t('wind_dir'), f"{wind_dir:.0f}°" if wind_dir else "N/A")
-        cols[4].metric(t('swell_dir'), f"{swell_dir:.0f}°" if swell_dir else "N/A")
-        cols[5].metric(t('water_temp'), f"{water_temp_f:.0f}°F" if water_temp_f else "N/A")
-        cols[6].metric(t('surf_score'), f"{surf_score} ⭐")
-        cols[7].metric(t('wave_energy'), f"{wave_energy:.0f}" if wave_energy else "N/A")
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        col1.metric(t('wave_height'), f"{wave_height_ft:.1f} ft" if wave_height_ft else "N/A")
+        col2.metric(t('wave_period'), f"{wave_period:.0f} sec" if wave_period else "N/A")
+        col3.metric(t('wind_speed'), f"{wind_speed_mph:.0f} mph" if wind_speed_mph else "N/A")
+        col4.metric(t('wind_dir'), f"{wind_dir:.0f}°" if wind_dir else "N/A")
+        col5.metric(t('swell_dir'), f"{swell_dir:.0f}°" if swell_dir else "N/A")
+        col6.metric(t('water_temp'), f"{water_temp_f:.0f}°F" if water_temp_f else "N/A")
+        
+        col7, col8 = st.columns(2)
+        col7.metric(t('surf_score'), f"{surf_score} ⭐")
+        col8.metric(t('wave_energy'), f"{wave_energy:.0f}" if wave_energy else "N/A")
         
         # Analysis
         if show_analysis:
@@ -766,12 +668,8 @@ def main():
         cams = BEACHES[selected_cam_beach].cam_urls
         if cams:
             for url in cams:
-                st.markdown(f"### Live Cam: {selected_cam_beach}")
-                if 'youtube' in url:
-                    embed_url = f'{url}?autoplay=1&mute=1&controls=0&loop=1'
-                    st.components.v1.html(f'<iframe src="{embed_url}" width="100%" height="500" frameborder="0" allowfullscreen></iframe>', height=500)
-                else:
-                    st.image(url, use_column_width=True, caption="Updated every minute")
+                st.markdown(f"### Cam: {url}")
+                st.components.v1.html(f'<iframe src="{url}" width="100%" height="500" frameborder="0"></iframe>', height=500)
         else:
             st.info("No cams available for this spot.")
 
